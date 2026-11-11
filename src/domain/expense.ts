@@ -70,5 +70,32 @@ export function approveExpense(expense: Expense, actor: {id: string, role: Appro
 
 }
 
+export function rejectExpense(expense: Expense, actor: {id: string, role: ApprovalRole}, decidedAt: Date, reason: string) {
+    if (reason.trim() === "") {
+        return {ok: false, reason: "invalid_reason"};
+    }
+     if (expense.employeeId === actor.id) {
+    return {ok: false, reason: "self_rejection_not_allowed"};
+    }
+
+    if (actor.role !== expense.requiredRole) {
+    return {ok: false, reason: "insufficient_role"};
+    }
+
+     if (expense.status !== "pending") {
+    return {ok: false, reason: "invalid_status"};
+    }
+
+    expense.status = "rejected";
+
+    expense.decision = {
+        actor: {id: actor.id, role: actor.role},
+        result: "rejected",
+        decidedAt,
+        reason: reason.trim()
+    };
+    return {ok: true, expense};
+  }
+
 
  

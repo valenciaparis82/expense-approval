@@ -1,5 +1,5 @@
 import { test, expect } from "bun:test";
-import { approveExpense, createExpense } from "../src/domain/expense";
+import { approveExpense, createExpense, rejectExpense } from "../src/domain/expense";
 import { Actor } from "@/domain/actor";
 
 test("rechaza automáticamente un gasto personal de 20 €", () => {
@@ -100,4 +100,51 @@ test ("Un empelado no puede aprobar su propio gasto", () => {
 }
 )
 
- 
+test ("Un empelado con rol de finanzas no puede aprobar un gasto que debe ser resuelto por un manager", () => {
+
+    const result = createExpense(60000, "Material informático", "equipment", new Date("2026-09-02"), "069", "358" );
+    const actor: Actor = {id: "326", role: "finance"};
+    const approvalResult = approveExpense(result.expense!, actor, new Date("2026-09-02"));
+    expect(result.ok).toBe(true);
+    expect(approvalResult.ok).toBe(false);
+    expect(approvalResult.reason).toBe("insufficient_role");
+    expect(result.expense?.status).toBe("pending");
+}
+) 
+
+
+test ("Un gasto ya aprovado no requiere aprobación adicional", () => {
+
+    const result = createExpense(60000, "Material informático", "equipment", new Date("2026-09-02"), "069", "326" );
+    const actor: Actor = {id: "545", role: "manager"};
+    const approvalResult = approveExpense(result.expense!, actor, new Date("2026-09-02"));
+    expect(result.ok).toBe(true);
+    expect(result.expense?.status).toBe("approved");
+    expect(result.expense?.requiredRole).toBe("manager");
+
+}
+)
+
+test ("Un manager rechaza un gasto y guarda el motivo sin espacios en los extremos", () => {
+
+    const result = createExpense(60000, "Material informático", "equipment", new Date("2026-09-02"), "069", "326" );
+    const actor: Actor = {id: "545", role: "manager"};
+    const rejectionResult = rejectExpense(result.expense!, actor, new Date("2026-09-02"), " Falta el recibo de compra  ");
+    expect(rejectionResult.ok).toBe(true);
+    expect(rejectionResult.expense?.status).toBe("rejected");
+    expect(rejectionResult.expense?.decision?.reason).toBe("Falta el recibo de compra");
+
+}
+)
+
+test ("Reason incorrecta, debe contener una razon valida", () => {
+
+    const result = createExpense(60000, "Material informático", "equipment", new Date("2026-09-02"), "069", "326" );
+    const actor: Actor = {id: "545", role: "manager"};
+    const rejectionResult = rejectExpense(result.expense!, actor, new Date("2026-09-02"), "                  ");
+    expect(rejectionResult.ok).toBe(false);
+    expect(result.expense?.status).toBe("pending");
+    expect(rejectionResult.reason).toBe("invalid_reason");
+
+}
+)
