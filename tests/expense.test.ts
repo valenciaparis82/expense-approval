@@ -82,6 +82,7 @@ test ("gasto de 600 € en material informatico pendiente de aprobación por un 
     const actor: Actor = {id: "545", role: "manager"};
     const approvalResult = approveExpense(result.expense!, actor, new Date("2026-09-02"));
     expect(result.ok).toBe(true);
+    expect(approvalResult.ok).toBe(true);
     expect(result.expense?.status).toBe("approved");
     expect(result.expense?.requiredRole).toBe("manager");
 
@@ -119,6 +120,7 @@ test ("Un gasto ya aprovado no requiere aprobación adicional", () => {
     const actor: Actor = {id: "545", role: "manager"};
     const approvalResult = approveExpense(result.expense!, actor, new Date("2026-09-02"));
     expect(result.ok).toBe(true);
+    expect(approvalResult.ok).toBe(true);
     expect(result.expense?.status).toBe("approved");
     expect(result.expense?.requiredRole).toBe("manager");
 
